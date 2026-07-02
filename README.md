@@ -17,6 +17,38 @@ cargo build --workspace
 cargo test --workspace
 ```
 
+## Install From A Release
+
+Release artifacts are built from tags named `vX.Y.Z`. The tag must match the Cargo workspace version.
+
+Recommended artifacts:
+
+- Fedora: install the `.rpm`.
+- Ubuntu/Debian: install the `.deb`.
+- Other Linux distributions: use the generic `.tar.gz`.
+- Windows: install the `.msi`.
+- macOS: use the `.dmg`. Current macOS artifacts are unsigned until Developer ID signing and notarization are configured.
+
+The Linux packages install:
+
+- `/usr/bin/pip-switch`
+- `/usr/bin/pip-switch-daemon`
+- `/usr/lib/udev/rules.d/60-pip-switch-msi.rules`
+- `/usr/lib/systemd/user/pip-switch-daemon.service`
+
+After installing a Linux package, unplug/replug the monitor's USB upstream cable or reboot so udev permissions apply.
+
+## Release Process
+
+Update the workspace version in `Cargo.toml`, commit it, then create a matching tag:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The release workflow verifies the tag against the Cargo version, builds native artifacts on GitHub Actions, and publishes them to GitHub Releases.
+
 ## CLI
 
 ```sh
@@ -159,6 +191,18 @@ printf '%s\n' \
 ```sh
 pip-switch swap
 pip-switch pip-toggle
+```
+
+On X11, the daemon can register the configured hotkeys:
+
+```sh
+systemctl --user enable --now pip-switch-daemon.service
+```
+
+Disable it with:
+
+```sh
+systemctl --user disable --now pip-switch-daemon.service
 ```
 
 ## Hardware Validation

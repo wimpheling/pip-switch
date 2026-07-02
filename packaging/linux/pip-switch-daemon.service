@@ -1,0 +1,13 @@
+[Unit]
+Description=pip-switch monitor hotkey daemon
+Documentation=https://github.com/example/pip-switch
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pip-switch-daemon
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=default.target

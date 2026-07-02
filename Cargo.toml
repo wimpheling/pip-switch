@@ -11,6 +11,7 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/example/pip-switch"
+description = "Keyboard-friendly MSI monitor PIP/PBP switch utility"
 
 [workspace.dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
