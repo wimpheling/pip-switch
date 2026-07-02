@@ -1,0 +1,12 @@
+[package]
+name = "pip-switch"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+clap.workspace = true
+pip-switch-core = { path = "../pip-switch-core" }
+tracing.workspace = true
+tracing-subscriber.workspace = true

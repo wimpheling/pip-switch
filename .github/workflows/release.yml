@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-generic
+            os: ubuntu-24.04
+            archive: tar.gz
+          - name: windows
+            os: windows-latest
+            archive: zip
+          - name: macos-x86_64
+            os: macos-13
+            archive: tar.gz
+          - name: macos-aarch64
+            os: macos-14
+            archive: tar.gz
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libudev-dev libhidapi-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --workspace --release
+      - name: Stage artifacts
+        shell: bash
+        run: |
+          mkdir -p dist/pip-switch-${{ matrix.name }}
+          cp target/release/pip-switch* dist/pip-switch-${{ matrix.name }}/ || true
+          cp README.md dist/pip-switch-${{ matrix.name }}/
+          cp -R packaging dist/pip-switch-${{ matrix.name }}/
+      - name: Archive tar.gz
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: tar -czf pip-switch-${{ matrix.name }}.tar.gz -C dist pip-switch-${{ matrix.name }}
+      - name: Archive zip
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: Compress-Archive -Path dist/pip-switch-${{ matrix.name }} -DestinationPath pip-switch-${{ matrix.name }}.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pip-switch-${{ matrix.name }}
+          path: |
+            pip-switch-${{ matrix.name }}.tar.gz
+            pip-switch-${{ matrix.name }}.zip
