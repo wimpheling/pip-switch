@@ -167,14 +167,14 @@ jobs:
         run: echo "version=$(packaging/scripts/assert-release-tag.sh '${{ github.ref }}')" >> "$GITHUB_OUTPUT"
       - name: Build
         run: cargo build --workspace --release
-      - name: Package DMG
+      - name: Package PKG
         run: |
           mkdir -p dist
-          packaging/macos/create-dmg.sh "${{ steps.version.outputs.version }}" "${{ matrix.target }}" dist
+          packaging/macos/create-pkg.sh "${{ steps.version.outputs.version }}" "${{ matrix.target }}" dist
       - uses: actions/upload-artifact@v4
         with:
           name: macos-${{ matrix.target }}
-          path: dist/*.dmg
+          path: dist/*.pkg
 
   publish:
     name: Publish GitHub Release

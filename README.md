@@ -27,7 +27,7 @@ Recommended artifacts:
 - Ubuntu/Debian: install the `.deb`.
 - Other Linux distributions: use the generic `.tar.gz`.
 - Windows: install the `.msi`.
-- macOS: use the `.dmg`. Current macOS artifacts are unsigned until Developer ID signing and notarization are configured.
+- macOS: install the `.pkg`. Current macOS artifacts are unsigned until Developer ID signing and notarization are configured.
 
 The Linux packages install:
 
@@ -37,6 +37,14 @@ The Linux packages install:
 - `/usr/lib/systemd/user/pip-switch-daemon.service`
 
 After installing a Linux package, unplug/replug the monitor's USB upstream cable or reboot so udev permissions apply.
+
+The macOS package installs:
+
+- `/Applications/pip-switch.app`
+- `/usr/local/bin/pip-switch`
+- `/Library/LaunchAgents/dev.pip-switch.daemon.plist`
+
+Because the package is currently unsigned, macOS may require approving it in System Settings under Privacy & Security after the first install attempt.
 
 ## Release Process
 
