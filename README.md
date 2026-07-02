@@ -1,96 +1,161 @@
 # pip-switch
 
-`pip-switch` is a small Rust utility for controlling MSI Modern MD342CQPW PIP/PBP actions through MSI's USB HID monitor protocol.
+`pip-switch` controls MSI Modern MD342CQPW PIP/PBP actions through the monitor's USB HID protocol.
 
-The v1 target is:
+It provides:
 
-- `pip-switch swap` sends the monitor PIP/PBP Display Switch command.
-- `pip-switch pip-toggle` turns PIP off, or restores a configured PIP layout when PIP is off.
-- `pip-switch-daemon` registers global hotkeys for those actions where the platform supports them.
+- `pip-switch`, a CLI for direct use, scripts, and desktop shortcut bindings.
+- `pip-switch-daemon`, a hotkey daemon for platforms where global hotkeys are supported.
 
-The command table follows the MSI HID protocol used by `couriersud/msigd`. Unsupported monitor writes can be risky, so raw writes require an explicit guard flag.
+The monitor must be connected to the computer with a USB upstream connection, not only HDMI/DisplayPort/USB-C video. The USB HID device usually appears as:
 
-## Build
-
-```sh
-cargo build --workspace
-cargo test --workspace
+```text
+1462:3fa4 Micro Star International MSI Gaming Controller
 ```
 
-## Install From A Release
+## Getting Started
 
-Release artifacts are built from tags named `vX.Y.Z`. The tag must match the Cargo workspace version.
+### Installing
 
-Recommended artifacts:
+Download the latest artifact for your OS from GitHub Releases.
 
-- Fedora: install the `.rpm`.
-- Ubuntu/Debian: install the `.deb`.
-- Other Linux distributions: use the generic `.tar.gz`.
-- Windows: install the `.msi`.
-- macOS: install the `.pkg`. Current macOS artifacts are unsigned until Developer ID signing and notarization are configured.
+#### macOS
 
-The Linux packages install:
+Install the `.pkg` artifact.
+
+The package installs:
+
+- `/Applications/pip-switch.app`
+- `/usr/local/bin/pip-switch`
+- `/Library/LaunchAgents/dev.pip-switch.daemon.plist`
+
+Current macOS packages are unsigned. If macOS blocks installation or first launch, approve it in System Settings under Privacy & Security.
+
+Test the CLI:
+
+```sh
+pip-switch list
+pip-switch swap
+pip-switch pip-toggle
+```
+
+Start or restart the daemon:
+
+```sh
+sudo launchctl unload /Library/LaunchAgents/dev.pip-switch.daemon.plist 2>/dev/null || true
+sudo launchctl load /Library/LaunchAgents/dev.pip-switch.daemon.plist
+```
+
+If hotkeys do not fire, macOS may need Accessibility or Input Monitoring permission for `pip-switch-daemon`.
+
+#### Windows
+
+Install the `.msi` artifact.
+
+Then open PowerShell or Windows Terminal and test:
+
+```powershell
+pip-switch list
+pip-switch swap
+pip-switch pip-toggle
+```
+
+The MSI also installs `pip-switch-daemon.exe`. Autostart and signed installer polish are planned follow-ups.
+
+#### Fedora
+
+Install the `.rpm` artifact:
+
+```sh
+sudo dnf install ./pip-switch-*.rpm
+```
+
+The RPM installs:
 
 - `/usr/bin/pip-switch`
 - `/usr/bin/pip-switch-daemon`
 - `/usr/lib/udev/rules.d/60-pip-switch-msi.rules`
 - `/usr/lib/systemd/user/pip-switch-daemon.service`
 
-After installing a Linux package, unplug/replug the monitor's USB upstream cable or reboot so udev permissions apply.
+After installing, unplug/replug the monitor USB-B or USB-C upstream cable, or reboot, so udev permissions apply.
 
-The macOS package installs:
-
-- `/Applications/pip-switch.app`
-- `/usr/local/bin/pip-switch`
-- `/Library/LaunchAgents/dev.pip-switch.daemon.plist`
-
-Because the package is currently unsigned, macOS may require approving it in System Settings under Privacy & Security after the first install attempt.
-
-## Release Process
-
-Update the workspace version in `Cargo.toml`, commit it, then create a matching tag:
-
-```sh
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The release workflow verifies the tag against the Cargo version, builds native artifacts on GitHub Actions, and publishes them to GitHub Releases.
-
-## CLI
+Test:
 
 ```sh
 pip-switch list
-pip-switch identify
 pip-switch probe --pip
-pip-switch read pip_mode
 pip-switch swap
-pip-switch pip-on
-pip-switch pip-off
 pip-switch pip-toggle
-pip-switch raw-read 00600
-pip-switch raw-write --i-understand-risk 00650 001
 ```
 
-Write the default config:
+On Fedora Wayland, bind desktop shortcuts directly to:
+
+```sh
+pip-switch swap
+pip-switch pip-toggle
+```
+
+On X11, the daemon can register configured hotkeys:
+
+```sh
+systemctl --user enable --now pip-switch-daemon.service
+```
+
+Disable it with:
+
+```sh
+systemctl --user disable --now pip-switch-daemon.service
+```
+
+#### Ubuntu/Debian
+
+Install the `.deb` artifact:
+
+```sh
+sudo apt install ./pip-switch-*.deb
+```
+
+After installing, unplug/replug the monitor USB upstream cable, or reboot.
+
+#### Generic Linux
+
+Use the `.tar.gz` artifact if your distribution does not use RPM or DEB packages. Install the binaries and udev rule manually from the archive, then reload udev:
+
+```sh
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+Unplug/replug the monitor USB upstream cable after installing the rule.
+
+### Configuring
+
+Create the default config:
 
 ```sh
 pip-switch write-example-config
 ```
 
-Default config path:
+Config paths:
 
-- Linux: `$XDG_CONFIG_HOME/pip-switch/config.toml` or `~/.config/pip-switch/config.toml`
 - macOS: `~/Library/Application Support/pip-switch/config.toml`
 - Windows: `%APPDATA%\pip-switch\config.toml`
+- Linux: `$XDG_CONFIG_HOME/pip-switch/config.toml` or `~/.config/pip-switch/config.toml`
 
-Example:
+Open the config on macOS:
+
+```sh
+open "$HOME/Library/Application Support/pip-switch/config.toml"
+```
+
+Example config:
 
 ```toml
 # pip-switch config
 #
-# Hotkeys use global-hotkey syntax. On Fedora/Linux, the Windows key is "Super".
-# Examples: "Super+Shift+P", "Ctrl+Alt+P", "Alt+P"
+# Hotkeys use global-hotkey syntax.
+# On Fedora/Linux, the Windows key is "Super".
+# On macOS, use "Cmd", "Command", or "Super" for the Command key.
 
 [monitor]
 # Leave empty to use the first detected MSI monitor.
@@ -113,19 +178,93 @@ size = "small"
 position = "right_bottom"
 ```
 
-## Linux Permissions
+macOS hotkey examples:
 
-The monitor control interface appears as a USB HID device, usually:
-
-```text
-1462:3fa4 Micro Star International MSI Gaming Controller
+```toml
+[hotkeys]
+swap = "Cmd+Shift+P"
+pip_toggle = "Cmd+Shift+O"
 ```
 
-If `pip-switch list` detects the monitor but `pip-switch probe --pip` fails with permission denied, install a udev rule and replug the monitor's USB upstream cable.
+After changing hotkeys, restart the daemon for the new config to load.
 
-### Fedora 44
+macOS:
 
-Install expected build/runtime dependencies:
+```sh
+sudo launchctl unload /Library/LaunchAgents/dev.pip-switch.daemon.plist 2>/dev/null || true
+sudo launchctl load /Library/LaunchAgents/dev.pip-switch.daemon.plist
+```
+
+Linux systemd user service:
+
+```sh
+systemctl --user restart pip-switch-daemon.service
+```
+
+### Verifying
+
+Recommended smoke test:
+
+```sh
+pip-switch list
+pip-switch identify
+pip-switch probe --pip
+pip-switch pip-on
+pip-switch swap
+pip-switch pip-toggle
+```
+
+If `pip-switch list` detects the monitor but `probe --pip` fails with permission denied on Linux, check the hidraw path shown by `pip-switch list`, then inspect permissions:
+
+```sh
+getfacl /dev/hidraw1
+```
+
+The hidraw number can change.
+
+## CLI Reference
+
+```sh
+pip-switch list
+pip-switch identify
+pip-switch probe --pip
+pip-switch read pip_mode
+pip-switch swap
+pip-switch pip-on
+pip-switch pip-off
+pip-switch pip-toggle
+pip-switch raw-read 00600
+pip-switch raw-write --i-understand-risk 00650 001
+```
+
+Unsupported MSI monitor writes may be risky, so raw writes require `--i-understand-risk`.
+
+## Linux Permissions
+
+The packaged Fedora/RPM and Debian/Ubuntu installers include a udev rule. If you need to install it manually on Fedora, use the `uaccess` rule without `plugdev`:
+
+```sh
+printf '%s\n' \
+'SUBSYSTEM=="usb", ATTR{idVendor}=="1462", ATTR{idProduct}=="3fa4", MODE="0660", TAG+="uaccess"' \
+'KERNEL=="hidraw*", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="3fa4", MODE="0660", TAG+="uaccess"' \
+| sudo tee /etc/udev/rules.d/60-pip-switch-msi.rules >/dev/null
+
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+
+For Ubuntu/Debian systems with a `plugdev` group, this group-based variant is also valid:
+
+```sh
+printf '%s\n' \
+'SUBSYSTEM=="usb", ATTR{idVendor}=="1462", ATTR{idProduct}=="3fa4", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
+'KERNEL=="hidraw*", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="3fa4", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
+| sudo tee /etc/udev/rules.d/60-pip-switch-msi.rules >/dev/null
+```
+
+## Building
+
+Fedora dependencies:
 
 ```sh
 sudo dnf install \
@@ -137,34 +276,7 @@ sudo dnf install \
   libayatana-appindicator-gtk3-devel
 ```
 
-Install the Fedora-safe udev rule. Fedora usually does not have a `plugdev` group, so use `TAG+="uaccess"` without `GROUP="plugdev"`:
-
-```sh
-printf '%s\n' \
-'SUBSYSTEM=="usb", ATTR{idVendor}=="1462", ATTR{idProduct}=="3fa4", MODE="0660", TAG+="uaccess"' \
-'KERNEL=="hidraw*", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="3fa4", MODE="0660", TAG+="uaccess"' \
-| sudo tee /etc/udev/rules.d/60-pip-switch-msi.rules >/dev/null
-```
-
-Reload rules, then unplug/replug the monitor USB-B or USB-C upstream cable:
-
-```sh
-sudo udevadm control --reload-rules
-sudo udevadm trigger
-```
-
-Verify:
-
-```sh
-getfacl /dev/hidraw1
-pip-switch probe --pip
-```
-
-The hidraw number can change. Use `pip-switch list` to see the current path.
-
-### Ubuntu/Debian
-
-Install expected build/runtime dependencies:
+Ubuntu/Debian dependencies:
 
 ```sh
 sudo apt-get update
@@ -175,54 +287,38 @@ sudo apt-get install -y \
   libhidapi-dev
 ```
 
-On desktop systems, the same `uaccess` rule is usually enough:
+Build and test:
 
 ```sh
-sudo cp packaging/udev/60-pip-switch-msi.rules /etc/udev/rules.d/
-sudo udevadm control --reload-rules
-sudo udevadm trigger
+cargo build --workspace
+cargo test --workspace
 ```
 
-If you prefer group-based access on a system with a `plugdev` group, use this variant:
+## Release Process
+
+Release artifacts are built from tags named `vX.Y.Z`. The tag must match the Cargo workspace version.
+
+Update the workspace version in `Cargo.toml`, commit it, then create a matching tag:
 
 ```sh
-printf '%s\n' \
-'SUBSYSTEM=="usb", ATTR{idVendor}=="1462", ATTR{idProduct}=="3fa4", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
-'KERNEL=="hidraw*", ATTRS{idVendor}=="1462", ATTRS{idProduct}=="3fa4", MODE="0660", GROUP="plugdev", TAG+="uaccess"' \
-| sudo tee /etc/udev/rules.d/60-pip-switch-msi.rules >/dev/null
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
-## Linux Hotkeys
+The release workflow verifies the tag against the Cargo version, builds native artifacts on GitHub Actions, and publishes them to GitHub Releases.
 
-`global-hotkey` supports Linux through X11. On Wayland, bind shortcuts in the compositor to CLI commands such as:
+Current artifacts:
 
-```sh
-pip-switch swap
-pip-switch pip-toggle
-```
+- Fedora/RHEL: `.rpm`
+- Ubuntu/Debian: `.deb`
+- Generic Linux: `.tar.gz`
+- Windows: `.msi` and `.zip`
+- macOS: `.pkg`
 
-On X11, the daemon can register the configured hotkeys:
+macOS and Windows artifacts are not signed yet.
 
-```sh
-systemctl --user enable --now pip-switch-daemon.service
-```
+## Hardware Notes
 
-Disable it with:
+The command table follows the MSI HID protocol used by `couriersud/msigd`. DDC/CI is not used.
 
-```sh
-systemctl --user disable --now pip-switch-daemon.service
-```
-
-## Hardware Validation
-
-Recommended smoke sequence:
-
-```sh
-pip-switch identify
-pip-switch probe --pip
-pip-switch pip-on
-pip-switch swap
-pip-switch pip-toggle
-```
-
-If MD342CQPW command values differ from the MD342CQP assumptions, capture the official MSI app HID traffic and update the setting table in `crates/pip-switch-core/src/settings.rs`.
+If MD342CQPW command values differ from the current MD342-family assumptions, capture the official MSI app HID traffic and update the setting table in `crates/pip-switch-core/src/settings.rs`.
