@@ -5,7 +5,7 @@ mod protocol;
 mod settings;
 mod transport;
 
-pub use config::{Config, HotkeysConfig, MonitorConfig, PipConfig};
+pub use config::{Config, MonitorConfig, PipConfig};
 pub use error::{Error, Result};
 pub use monitor::{Identity, MonitorClient, MonitorSelection};
 pub use protocol::{

@@ -8,7 +8,6 @@ use crate::{Error, InputSource, PipMode, PipPosition, PipSize, Result};
 #[serde(default)]
 pub struct Config {
     pub monitor: MonitorConfig,
-    pub hotkeys: HotkeysConfig,
     pub pip: PipConfig,
 }
 
@@ -17,13 +16,6 @@ pub struct Config {
 pub struct MonitorConfig {
     pub serial: String,
     pub fallback: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
-#[serde(default)]
-pub struct HotkeysConfig {
-    pub swap: String,
-    pub pip_toggle: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Deserialize, Serialize)]
@@ -40,15 +32,6 @@ impl Default for MonitorConfig {
         Self {
             serial: String::new(),
             fallback: "first".to_string(),
-        }
-    }
-}
-
-impl Default for HotkeysConfig {
-    fn default() -> Self {
-        Self {
-            swap: "Super+Shift+P".to_string(),
-            pip_toggle: "Super+Shift+O".to_string(),
         }
     }
 }
@@ -101,19 +84,12 @@ impl Config {
 
     pub fn example_toml() -> &'static str {
         r#"# pip-switch config
-#
-# Hotkeys use global-hotkey syntax. On Fedora/Linux, the Windows key is "Super".
-# Examples: "Super+Shift+P", "Ctrl+Alt+P", "Alt+P"
 
 [monitor]
 # Leave empty to use the first detected MSI monitor.
 serial = ""
 # Possible values: "first"
 fallback = "first"
-
-[hotkeys]
-swap = "Super+Shift+P"
-pip_toggle = "Super+Shift+O"
 
 [pip]
 # Possible values: "pip", "pbp"
@@ -140,10 +116,6 @@ mod tests {
             serial = "abc"
             fallback = "first"
 
-            [hotkeys]
-            swap = "Super+Shift+P"
-            pip_toggle = "Super+Shift+O"
-
             [pip]
             mode = "pip"
             input = "usbc"
@@ -160,8 +132,6 @@ mod tests {
     #[test]
     fn example_config_documents_values_and_matches_defaults() {
         let text = Config::example_toml();
-        assert!(text.contains(r#"swap = "Super+Shift+P""#));
-        assert!(text.contains(r#"pip_toggle = "Super+Shift+O""#));
         assert!(text.contains(r#"input = "usbc""#));
         assert!(text.contains(r#"size = "small""#));
         assert!(text.contains(r#"position = "right_bottom""#));

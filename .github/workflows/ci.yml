@@ -48,9 +48,6 @@ jobs:
             gcc \
             pkgconf-pkg-config \
             hidapi-devel \
-            systemd-devel \
-            gtk3-devel \
-            libayatana-appindicator-gtk3-devel \
             rustup
           rustup-init -y --default-toolchain stable
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"

@@ -5,7 +5,6 @@
 It provides:
 
 - `pip-switch`, a CLI for direct use, scripts, and desktop shortcut bindings.
-- `pip-switch-daemon`, a hotkey daemon for platforms where global hotkeys are supported.
 
 The monitor must be connected to the computer with a USB upstream connection, not only HDMI/DisplayPort/USB-C video. The USB HID device usually appears as:
 
@@ -25,9 +24,7 @@ Install the `.pkg` artifact.
 
 The package installs:
 
-- `/Applications/pip-switch.app`
 - `/usr/local/bin/pip-switch`
-- `/Library/LaunchAgents/dev.pip-switch.daemon.plist`
 
 Current macOS packages are unsigned. If macOS blocks installation or first launch, approve it in System Settings under Privacy & Security.
 
@@ -39,14 +36,7 @@ pip-switch swap
 pip-switch pip-toggle
 ```
 
-Start or restart the daemon:
-
-```sh
-sudo launchctl unload /Library/LaunchAgents/dev.pip-switch.daemon.plist 2>/dev/null || true
-sudo launchctl load /Library/LaunchAgents/dev.pip-switch.daemon.plist
-```
-
-If hotkeys do not fire, macOS may need Accessibility or Input Monitoring permission for `pip-switch-daemon`.
+Use the macOS Shortcuts app to bind keyboard shortcuts to CLI commands.
 
 #### Windows
 
@@ -60,7 +50,7 @@ pip-switch swap
 pip-switch pip-toggle
 ```
 
-The MSI also installs `pip-switch-daemon.exe`. Autostart and signed installer polish are planned follow-ups.
+Use Windows shortcut tooling, PowerToys, AutoHotkey, or another launcher to bind keyboard shortcuts to CLI commands.
 
 #### Fedora
 
@@ -73,9 +63,7 @@ sudo dnf install ./pip-switch-*.rpm
 The RPM installs:
 
 - `/usr/bin/pip-switch`
-- `/usr/bin/pip-switch-daemon`
 - `/usr/lib/udev/rules.d/60-pip-switch-msi.rules`
-- `/usr/lib/systemd/user/pip-switch-daemon.service`
 
 After installing, unplug/replug the monitor USB-B or USB-C upstream cable, or reboot, so udev permissions apply.
 
@@ -88,23 +76,11 @@ pip-switch swap
 pip-switch pip-toggle
 ```
 
-On Fedora Wayland, bind desktop shortcuts directly to:
+Bind desktop shortcuts directly to:
 
 ```sh
 pip-switch swap
 pip-switch pip-toggle
-```
-
-On X11, the daemon can register configured hotkeys:
-
-```sh
-systemctl --user enable --now pip-switch-daemon.service
-```
-
-Disable it with:
-
-```sh
-systemctl --user disable --now pip-switch-daemon.service
 ```
 
 #### Ubuntu/Debian
@@ -152,20 +128,12 @@ Example config:
 
 ```toml
 # pip-switch config
-#
-# Hotkeys use global-hotkey syntax.
-# On Fedora/Linux, the Windows key is "Super".
-# On macOS, use "Cmd", "Command", or "Super" for the Command key.
 
 [monitor]
 # Leave empty to use the first detected MSI monitor.
 serial = ""
 # Possible values: "first"
 fallback = "first"
-
-[hotkeys]
-swap = "Super+Shift+P"
-pip_toggle = "Super+Shift+O"
 
 [pip]
 # Possible values: "pip", "pbp"
@@ -178,27 +146,22 @@ size = "small"
 position = "right_bottom"
 ```
 
-macOS hotkey examples:
+### Shortcuts
 
-```toml
-[hotkeys]
-swap = "Cmd+Shift+P"
-pip_toggle = "Cmd+Shift+O"
-```
+Use OS-native shortcuts to launch the CLI. This is more reliable and less invasive than a background key listener, especially with KVM setups and Wayland.
 
-After changing hotkeys, restart the daemon for the new config to load.
+Recommended physical shortcut pair:
 
-macOS:
+| Action | macOS | Windows/Linux |
+| --- | --- | --- |
+| Swap displays | `Control+Option+Shift+P` | `Ctrl+Alt+Shift+P` |
+| Toggle PIP | `Control+Option+Shift+O` | `Ctrl+Alt+Shift+O` |
 
-```sh
-sudo launchctl unload /Library/LaunchAgents/dev.pip-switch.daemon.plist 2>/dev/null || true
-sudo launchctl load /Library/LaunchAgents/dev.pip-switch.daemon.plist
-```
-
-Linux systemd user service:
+Bind these commands:
 
 ```sh
-systemctl --user restart pip-switch-daemon.service
+pip-switch swap
+pip-switch pip-toggle
 ```
 
 ### Verifying
@@ -270,10 +233,7 @@ Fedora dependencies:
 sudo dnf install \
   gcc \
   pkgconf-pkg-config \
-  hidapi-devel \
-  systemd-devel \
-  gtk3-devel \
-  libayatana-appindicator-gtk3-devel
+  hidapi-devel
 ```
 
 Ubuntu/Debian dependencies:

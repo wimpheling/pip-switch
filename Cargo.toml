@@ -2,7 +2,6 @@
 members = [
     "crates/pip-switch-core",
     "crates/pip-switch",
-    "crates/pip-switch-daemon",
 ]
 resolver = "2"
 
@@ -16,11 +15,9 @@ description = "Keyboard-friendly MSI monitor PIP/PBP switch utility"
 [workspace.dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
 dirs = "6.0.0"
-global-hotkey = "0.8.0"
 hidapi = { version = "2.6.6", default-features = false, features = ["linux-native-basic-udev"] }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.17"
 toml = "0.9.8"
 tracing = "0.1.44"
 tracing-subscriber = { version = "0.3.23", features = ["env-filter"] }
-tray-icon = "0.24.1"

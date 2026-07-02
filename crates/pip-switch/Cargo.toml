@@ -15,19 +15,16 @@ tracing-subscriber.workspace = true
 [package.metadata.deb]
 name = "pip-switch"
 maintainer = "pip-switch maintainers"
-depends = "$auto, systemd"
+depends = "$auto"
 section = "utils"
 priority = "optional"
 extended-description = """\
 pip-switch controls MSI Modern MD342CQPW PIP/PBP monitor actions through \
-the monitor's USB HID controller. It installs a CLI, an optional hotkey daemon, \
-and udev permissions for the MSI HID device."""
-maintainer-scripts = "../../packaging/deb"
+the monitor's USB HID controller. It installs a CLI and udev permissions for \
+the MSI HID device."""
 assets = [
-    ["../../target/release/pip-switch", "usr/bin/pip-switch", "755"],
-    ["../../target/release/pip-switch-daemon", "usr/bin/pip-switch-daemon", "755"],
+    ["target/release/pip-switch", "usr/bin/pip-switch", "755"],
     ["../../packaging/udev/60-pip-switch-msi.rules", "usr/lib/udev/rules.d/60-pip-switch-msi.rules", "644"],
-    ["../../packaging/linux/pip-switch-daemon.service", "usr/lib/systemd/user/pip-switch-daemon.service", "644"],
     ["../../README.md", "usr/share/doc/pip-switch/README.md", "644"],
 ]
 
@@ -35,15 +32,8 @@ assets = [
 name = "pip-switch"
 summary = "Keyboard-friendly MSI monitor PIP/PBP switch utility"
 release = "1"
-post_install_script = "../../packaging/rpm/post-install.sh"
-post_uninstall_script = "../../packaging/rpm/post-uninstall.sh"
 assets = [
     { source = "target/release/pip-switch", dest = "/usr/bin/pip-switch", mode = "755" },
-    { source = "target/release/pip-switch-daemon", dest = "/usr/bin/pip-switch-daemon", mode = "755" },
     { source = "packaging/udev/60-pip-switch-msi.rules", dest = "/usr/lib/udev/rules.d/60-pip-switch-msi.rules", mode = "644" },
-    { source = "packaging/linux/pip-switch-daemon.service", dest = "/usr/lib/systemd/user/pip-switch-daemon.service", mode = "644" },
     { source = "README.md", dest = "/usr/share/doc/pip-switch/README.md", mode = "644", doc = true },
 ]
-
-[package.metadata.generate-rpm.requires]
-systemd = "*"

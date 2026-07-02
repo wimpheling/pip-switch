@@ -1,10 +1,6 @@
 #!/bin/sh
 set -e
 
-if [ -x /Applications/pip-switch.app/Contents/MacOS/pip-switch-daemon ]; then
-    chmod +x /Applications/pip-switch.app/Contents/MacOS/pip-switch-daemon || true
-fi
-
 if [ -x /usr/local/bin/pip-switch ]; then
     chmod +x /usr/local/bin/pip-switch || true
 fi

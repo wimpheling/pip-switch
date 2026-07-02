@@ -10,16 +10,12 @@
 
     <Feature Id="Main" Title="pip-switch" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
-      <ComponentGroupRef Id="StartMenuComponents" />
     </Feature>
   </Package>
 
   <Fragment>
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="pip-switch" />
-    </StandardDirectory>
-    <StandardDirectory Id="ProgramMenuFolder">
-      <Directory Id="ApplicationProgramsFolder" Name="pip-switch" />
     </StandardDirectory>
   </Fragment>
 
@@ -28,26 +24,8 @@
       <Component Id="PipSwitchExe" Guid="{C6043DA6-D306-4394-A707-AB60A604C0B2}">
         <File Id="PipSwitchExeFile" Source="$(var.SourceDir)\pip-switch.exe" KeyPath="yes" />
       </Component>
-      <Component Id="PipSwitchDaemonExe" Guid="{9E2BB6B7-AFE5-44EA-B250-A7F136377369}">
-        <File Id="PipSwitchDaemonExeFile" Source="$(var.SourceDir)\pip-switch-daemon.exe" KeyPath="yes" />
-      </Component>
       <Component Id="Readme" Guid="{97E17FA6-E716-4811-B7C7-82C6D00FB247}">
         <File Id="ReadmeFile" Source="$(var.SourceDir)\README.md" KeyPath="yes" />
-      </Component>
-    </ComponentGroup>
-  </Fragment>
-
-  <Fragment>
-    <ComponentGroup Id="StartMenuComponents" Directory="ApplicationProgramsFolder">
-      <Component Id="StartMenuShortcut" Guid="{423C90B6-B1B6-4A91-B471-5A014074F471}">
-        <Shortcut
-          Id="PipSwitchDaemonShortcut"
-          Name="pip-switch daemon"
-          Description="Start the pip-switch hotkey daemon"
-          Target="[INSTALLFOLDER]pip-switch-daemon.exe"
-          WorkingDirectory="INSTALLFOLDER" />
-        <RemoveFolder Id="RemoveApplicationProgramsFolder" On="uninstall" />
-        <RegistryValue Root="HKCU" Key="Software\pip-switch" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
   </Fragment>
