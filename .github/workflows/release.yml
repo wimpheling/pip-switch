@@ -118,7 +118,7 @@ jobs:
       - name: Build
         run: cargo build --workspace --release
       - name: Install WiX
-        run: dotnet tool install --global wix
+        run: dotnet tool install --global wix --version 7.0.0
       - name: Stage files
         shell: pwsh
         run: |
@@ -129,7 +129,9 @@ jobs:
       - name: Build MSI
         shell: pwsh
         run: |
+          # WiX v7 requires explicit OSMF EULA acceptance in non-interactive builds.
           wix build packaging\windows\pip-switch.wxs `
+            -acceptEula wix7 `
             -d SourceDir="$PWD\dist\stage" `
             -d Version="${{ steps.version.outputs.version }}" `
             -arch x64 `
