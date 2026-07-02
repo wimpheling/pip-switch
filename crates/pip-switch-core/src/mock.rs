@@ -13,8 +13,14 @@ pub struct MockTransport {
 #[derive(Debug, Default)]
 struct MockState {
     devices: Vec<HidDeviceInfo>,
-    responses: HashMap<String, VecDeque<Vec<u8>>>,
+    responses: HashMap<String, VecDeque<MockRead>>,
     writes: Vec<Vec<u8>>,
+}
+
+#[derive(Debug)]
+enum MockRead {
+    Response(Vec<u8>),
+    Error(crate::Error),
 }
 
 impl MockTransport {
@@ -34,7 +40,16 @@ impl MockTransport {
             .responses
             .entry(path.into())
             .or_default()
-            .push_back(response.into());
+            .push_back(MockRead::Response(response.into()));
+    }
+
+    pub fn push_read_error(&self, path: impl Into<String>, error: crate::Error) {
+        let mut state = self.state.lock().expect("mock mutex poisoned");
+        state
+            .responses
+            .entry(path.into())
+            .or_default()
+            .push_back(MockRead::Error(error));
     }
 
     pub fn writes(&self) -> Vec<Vec<u8>> {
@@ -81,11 +96,15 @@ impl HidConnection for MockConnection {
 
     fn read_timeout(&mut self, bytes: &mut [u8], _timeout_ms: i32) -> Result<usize> {
         let mut state = self.state.lock().expect("mock mutex poisoned");
-        let response = state
+        let read = state
             .responses
             .get_mut(&self.path)
             .and_then(VecDeque::pop_front)
-            .unwrap_or_else(|| b"\x015600\r".to_vec());
+            .unwrap_or_else(|| MockRead::Response(b"\x015600\r".to_vec()));
+        let response = match read {
+            MockRead::Response(response) => response,
+            MockRead::Error(error) => return Err(error),
+        };
         let count = response.len().min(bytes.len());
         bytes[..count].copy_from_slice(&response[..count]);
         Ok(count)
@@ -141,6 +160,37 @@ mod tests {
         client.swap().unwrap();
         let writes = transport.writes();
         assert_eq!(&writes[0][..12], b"\x015b00650001\r");
+    }
+
+    #[test]
+    fn swap_tolerates_post_write_disconnect() {
+        let transport = MockTransport::new(vec![msi_device("a", None)]);
+        transport.push_read_error(
+            "a",
+            crate::Error::Hid(hidapi::HidError::HidApiError {
+                message: "unexpected poll error (device disconnected)".to_string(),
+            }),
+        );
+        let client = MonitorClient::new(transport.clone(), Config::default());
+
+        client.swap().unwrap();
+
+        let writes = transport.writes();
+        assert_eq!(&writes[0][..12], b"\x015b00650001\r");
+    }
+
+    #[test]
+    fn raw_write_keeps_post_write_disconnect_strict() {
+        let transport = MockTransport::new(vec![msi_device("a", None)]);
+        transport.push_read_error(
+            "a",
+            crate::Error::Hid(hidapi::HidError::HidApiError {
+                message: "unexpected poll error (device disconnected)".to_string(),
+            }),
+        );
+        let client = MonitorClient::new(transport, Config::default());
+
+        assert!(client.raw_write("00650", "001").is_err());
     }
 
     #[test]

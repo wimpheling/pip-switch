@@ -106,7 +106,7 @@ impl<T: HidTransport> MonitorClient<T> {
             .ok_or(Error::EmptyResponse)
     }
 
-    fn raw_write_allow_empty_ack(&self, command: &str, value: &str) -> Result<()> {
+    fn raw_write_allow_missing_ack(&self, command: &str, value: &str) -> Result<()> {
         self.raw_write_impl(command, value, true)?;
         Ok(())
     }
@@ -122,7 +122,13 @@ impl<T: HidTransport> MonitorClient<T> {
         let packet = build_write_packet(command, value)?;
         connection.write(&packet)?;
         let mut response = [0_u8; PACKET_SIZE];
-        let count = connection.read_timeout(&mut response, self.read_timeout_ms)?;
+        let count = match connection.read_timeout(&mut response, self.read_timeout_ms) {
+            Ok(count) => count,
+            Err(error) if allow_empty_ack && is_post_write_missing_ack_error(&error) => {
+                return Ok(None);
+            }
+            Err(error) => return Err(error),
+        };
         if count == 0 && allow_empty_ack {
             return Ok(None);
         }
@@ -134,21 +140,21 @@ impl<T: HidTransport> MonitorClient<T> {
     }
 
     pub fn swap(&self) -> Result<()> {
-        self.write_setting(Setting::DisplaySwitch, "001")?;
+        self.raw_write_allow_missing_ack(Setting::DisplaySwitch.command(), "001")?;
         Ok(())
     }
 
     pub fn pip_on(&self) -> Result<()> {
         let pip = &self.config.pip;
-        self.raw_write_allow_empty_ack(Setting::PipInput.command(), pip.input.encoded())?;
-        self.raw_write_allow_empty_ack(Setting::PipSize.command(), pip.size.encoded())?;
-        self.raw_write_allow_empty_ack(Setting::PipPosition.command(), pip.position.encoded())?;
-        self.raw_write_allow_empty_ack(Setting::PipMode.command(), pip.mode.encoded())?;
+        self.raw_write_allow_missing_ack(Setting::PipInput.command(), pip.input.encoded())?;
+        self.raw_write_allow_missing_ack(Setting::PipSize.command(), pip.size.encoded())?;
+        self.raw_write_allow_missing_ack(Setting::PipPosition.command(), pip.position.encoded())?;
+        self.raw_write_allow_missing_ack(Setting::PipMode.command(), pip.mode.encoded())?;
         Ok(())
     }
 
     pub fn pip_off(&self) -> Result<()> {
-        self.write_setting(Setting::PipMode, PipMode::Off.encoded())?;
+        self.raw_write_allow_missing_ack(Setting::PipMode.command(), PipMode::Off.encoded())?;
         Ok(())
     }
 
@@ -187,5 +193,22 @@ impl<T: HidTransport> MonitorClient<T> {
         let mut response = [0_u8; PACKET_SIZE];
         let count = connection.read_timeout(&mut response, self.read_timeout_ms)?;
         parse_read_response(command, &response[..count])
+    }
+}
+
+fn is_post_write_missing_ack_error(error: &Error) -> bool {
+    match error {
+        Error::Hid(hidapi::HidError::HidApiError { message }) => {
+            let message = message.to_ascii_lowercase();
+            message.contains("poll error") || message.contains("device disconnected")
+        }
+        Error::Hid(hidapi::HidError::IoError { error }) => matches!(
+            error.kind(),
+            std::io::ErrorKind::NotConnected
+                | std::io::ErrorKind::ConnectionAborted
+                | std::io::ErrorKind::ConnectionReset
+                | std::io::ErrorKind::BrokenPipe
+        ),
+        _ => false,
     }
 }
