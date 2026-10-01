@@ -40,9 +40,9 @@ Use the macOS Shortcuts app to bind keyboard shortcuts to CLI commands.
 
 #### Windows
 
-Install the `.msi` artifact.
+Install the `.msi` artifact. The installer adds the installation directory to the system `PATH` and removes that entry on uninstall.
 
-Then open PowerShell or Windows Terminal and test:
+After installation, close and reopen PowerShell or Windows Terminal so it picks up the updated `PATH`, then test:
 
 ```powershell
 pip-switch list
@@ -261,8 +261,8 @@ Release artifacts are built from tags named `vX.Y.Z`. The tag must match the Car
 Update the workspace version in `Cargo.toml`, commit it, then create a matching tag:
 
 ```sh
-git tag v0.1.2
-git push origin v0.1.2
+git tag v0.1.3
+git push origin v0.1.3
 ```
 
 The release workflow verifies the tag against the Cargo version, builds native artifacts on GitHub Actions, and publishes them to GitHub Releases.

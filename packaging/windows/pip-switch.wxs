@@ -23,6 +23,14 @@
     <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
       <Component Id="PipSwitchExe" Guid="{C6043DA6-D306-4394-A707-AB60A604C0B2}">
         <File Id="PipSwitchExeFile" Source="$(var.SourceDir)\pip-switch.exe" KeyPath="yes" />
+        <Environment
+          Id="PipSwitchPath"
+          Name="PATH"
+          Value="[INSTALLFOLDER]"
+          Action="set"
+          Part="last"
+          System="yes"
+          Permanent="no" />
       </Component>
       <Component Id="Readme" Guid="{97E17FA6-E716-4811-B7C7-82C6D00FB247}">
         <File Id="ReadmeFile" Source="$(var.SourceDir)\README.md" KeyPath="yes" />
